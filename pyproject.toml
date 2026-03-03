@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "binance-mm-risk-monitor"
+version = "0.1.0"
+description = "Real-time market making risk monitor for Binance Spot/Futures"
+requires-python = ">=3.11"
+dependencies = [
+  "ccxtpro>=0.10.130",
+  "polars>=1.10.0",
+  "numpy>=2.1.0",
+  "streamlit>=1.38.0",
+  "pydantic>=2.9.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
