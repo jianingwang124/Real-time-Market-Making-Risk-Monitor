@@ -11,7 +11,7 @@ Template for a production-oriented risk monitor for Binance Spot/Futures market 
 ## 2) Architecture
 
 - **Data Layer** (`connector.py`)
-  - `ccxt.pro` asyncio WebSocket manager.
+  - `ccxt` async connector (`ccxt.pro` if available, otherwise async REST polling).
   - Streams:
     - Level-2 order book (`watch_order_book`) for BTCUSDT Spot/Futures.
     - Aggregate trade proxy (`watch_trades`) for BTCUSDT Spot/Futures.
@@ -101,4 +101,3 @@ python -m risk_monitor.main
 - Persist tick/risk snapshots for replay and post-trade forensics.
 - Add unit tests for OFI, liquidation model, L-VaR, and stress scenarios.
 - Add strategy gateway integration for automated risk actions.
-

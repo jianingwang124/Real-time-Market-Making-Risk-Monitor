@@ -1,4 +1,4 @@
-ccxtpro>=0.10.130
+ccxt>=4.4.0
 polars>=1.10.0
 numpy>=2.1.0
 streamlit>=1.38.0
