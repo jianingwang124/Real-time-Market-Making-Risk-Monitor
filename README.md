@@ -1,4 +1,4 @@
-# Binance Real-time Market Making Risk Monitor
+# Real-time Market Making Risk Monitor
 
 Template for a production-oriented risk monitor for Binance Spot/Futures market making, with live WebSocket market data, low-latency analytics, stress testing, and dashboarding.
 
