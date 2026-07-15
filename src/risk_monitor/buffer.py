@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+import time
 from collections import deque
 from copy import deepcopy
 
@@ -16,6 +17,7 @@ class SharedBuffer:
         self.prev_books: dict[str, BookState] = {}
         self.trades: deque[TradeState] = deque(maxlen=max_trades)
         self.metrics: dict[str, float] = {}
+        self.metrics_history: deque[dict[str, float]] = deque(maxlen=1200)
         self.greeks: dict[str, float] = {"delta": 0.0, "gamma": 0.0, "vega": 0.0}
         self.positions: dict[str, float] = {"spot_btc": 0.0, "futures_btc": 0.0}
         self.risk_flags: dict[str, bool] = {}
@@ -38,6 +40,7 @@ class SharedBuffer:
     ) -> None:
         with self._lock:
             self.metrics.update(metrics)
+            self.metrics_history.append({"ts": time.time(), **metrics})
             self.greeks = deepcopy(greeks)
             self.risk_flags = deepcopy(risk_flags)
 
@@ -53,8 +56,8 @@ class SharedBuffer:
                 "prev_books": deepcopy(self.prev_books),
                 "trades": list(self.trades),
                 "metrics": deepcopy(self.metrics),
+                "metrics_history": list(self.metrics_history),
                 "greeks": deepcopy(self.greeks),
                 "positions": deepcopy(self.positions),
                 "risk_flags": deepcopy(self.risk_flags),
             }
-

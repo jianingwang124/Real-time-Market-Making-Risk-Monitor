@@ -1,42 +1,55 @@
 # Real-time Market Making Risk Monitor
 
-Template for a production-oriented risk monitor for Binance Spot/Futures market making, with live WebSocket market data, low-latency analytics, stress testing, and dashboarding.
+A production-oriented risk monitor for Binance Spot/Futures market making, with live WebSocket market data, low-latency analytics, stress testing, and a Streamlit dashboard focused on inventory, flow, and liquidity risk.
 
-## 1) Objectives
+## Overview
 
-- Detect intraday risk build-up in inventory, flow imbalance, and liquidity.
-- Quantify tail risk via Liquidity-adjusted VaR (L-VaR) and stress scenarios.
-- Surface limit breaches in real time with deterministic, thread-safe state handling.
+The system is designed to answer three questions in real time:
 
-## 2) Architecture
+- How much inventory risk are we carrying?
+- Is order flow turning against us?
+- What would it cost to exit under current liquidity conditions?
+
+## Screenshots
+
+### Risk Overview
+
+![Risk Overview](risk_overview.png)
+
+### Market Charts
+
+![Market Charts](market_charts.png)
+
+## Architecture
 
 - **Data Layer** (`connector.py`)
-  - `ccxt` async connector (`ccxt.pro` if available, otherwise async REST polling).
+  - Async Binance connector using `ccxt.pro`-style WebSocket semantics.
   - Streams:
-    - Level-2 order book (`watch_order_book`) for BTCUSDT Spot/Futures.
-    - Aggregate trade proxy (`watch_trades`) for BTCUSDT Spot/Futures.
+    - Level 2 order book for BTCUSDT Spot/Futures.
+    - Aggregate trades for BTCUSDT Spot/Futures.
 - **Analytics Layer** (`metrics.py`)
-  - OFI (top 10 levels).
-  - Inventory delta + Avellaneda-Stoikov indifference price.
+  - OFI from the top 10 order-book levels.
+  - Inventory delta tracking and Avellaneda-Stoikov indifference price.
   - 1-minute liquidation cost from current depth.
 - **Risk Layer** (`stress_test.py`)
-  - Liquidity-adjusted VaR.
-  - Black swan scenario: down gap + bid-side liquidity decay.
+  - Liquidity-adjusted VaR (L-VaR).
+  - Black swan scenario: gap down plus bid-side liquidity vanishing.
 - **Engine** (`engine.py`)
-  - Async event queue.
-  - Periodic risk loop.
-  - Shared thread-safe buffer for UI/API consumers.
+  - Async event queue and periodic risk loop.
+  - Thread-safe shared buffer for UI and other consumers.
 - **Interface** (`app.py`)
-  - Streamlit dashboard for Greeks, risk metrics, and risk-limit status.
+  - Dark-mode Streamlit dashboard with overview and market chart tabs.
 
-## 3) Project Structure
+## Project Structure
 
 ```text
 .
 ├── app.py
+├── market_charts.png
 ├── pyproject.toml
 ├── README.md
 ├── requirements.txt
+├── risk_overview.png
 └── src
     └── risk_monitor
         ├── __init__.py
@@ -50,7 +63,7 @@ Template for a production-oriented risk monitor for Binance Spot/Futures market 
         └── stress_test.py
 ```
 
-## 4) Runbook
+## Runbook
 
 ```bash
 python -m venv .venv
@@ -59,13 +72,13 @@ pip install -e .
 streamlit run app.py
 ```
 
-For headless engine execution:
+Headless engine mode:
 
 ```bash
 python -m risk_monitor.main
 ```
 
-## 5) Risk Control Baseline
+## Risk Control Baseline
 
 - **Hard limits**
   - `max_abs_delta_btc`
@@ -73,31 +86,31 @@ python -m risk_monitor.main
   - `max_liquidation_cost_usdt`
   - `max_abs_ofi`
 - **Limit policy**
-  - Breach -> alert + UI red status.
-  - Persistent breach -> throttle quoting / reduce inventory.
-  - Severe breach -> kill-switch for strategy order gateway.
+  - Breach -> alert and UI red status.
+  - Persistent breach -> throttle quoting or reduce inventory.
+  - Severe breach -> kill-switch for the strategy gateway.
 
-## 6) Operational Robustness Checklist
+## Operational Robustness
 
 - **Data reliability**
-  - WS reconnect with bounded retry.
-  - Sequence sanity checks and stale-data detection.
+  - WebSocket reconnect with bounded retry.
+  - Sequence checks and stale-data detection.
 - **Concurrency safety**
-  - Shared state protected with lock (`SharedBuffer`).
-  - Async producer/consumer decoupling via bounded queue.
+  - Shared state protected by a lock in `SharedBuffer`.
+  - Async producer/consumer decoupled by a bounded queue.
 - **Failure containment**
-  - Risk loop independent from feed tasks.
-  - Backpressure handling on queue overflow (drop oldest).
+  - Risk loop isolated from feed tasks.
+  - Backpressure handling for queue overflow.
 - **Observability**
-  - Emit per-loop latency, queue depth, stale feed counters.
-  - Export metrics to Prometheus/StatsD.
+  - Track loop latency, queue depth, and stale feed counters.
+  - Export metrics to Prometheus or StatsD.
 - **Disaster controls**
   - Graceful shutdown hooks.
-  - Playbook for exchange/API outage and partial fills.
+  - Playbook for exchange outage, stale book, and partial fills.
 
-## 7) Production Hardening (Next)
+## Production Hardening
 
-- Add authenticated user data streams for exact account/position sync.
-- Persist tick/risk snapshots for replay and post-trade forensics.
+- Add authenticated user data streams for exact position sync.
+- Persist tick and risk snapshots for replay and post-trade forensics.
 - Add unit tests for OFI, liquidation model, L-VaR, and stress scenarios.
-- Add strategy gateway integration for automated risk actions.
+- Integrate order gateway controls for automated risk actions.
